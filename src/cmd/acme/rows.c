@@ -612,6 +612,7 @@ rowload(Row *row, char *file, int initing)
 			}
 			textdelete(&row->col[i]->tag, 0, row->col[i]->tag.file->b.nc, TRUE);
 			textinsert(&row->col[i]->tag, 0, r+n+1, nr-(n+1), TRUE);
+			textsetselect(&row->col[i]->tag, row->col[i]->tag.file->b.nc, row->col[i]->tag.file->b.nc);
 			break;
 		case 'w':
 			l[Blinelen(b)-1] = 0;
@@ -625,6 +626,7 @@ rowload(Row *row, char *file, int initing)
 			}
 			textdelete(&row->tag, 0, row->tag.file->b.nc, TRUE);
 			textinsert(&row->tag, 0, r, nr, TRUE);
+			textsetselect(&row->tag, row->tag.file->b.nc, row->tag.file->b.nc);
 			break;
 		default:
 			done = 1;

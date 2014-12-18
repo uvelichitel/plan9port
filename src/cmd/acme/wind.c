@@ -445,16 +445,15 @@ winsettag1(Window *w)
 	int i, j, k, n, bar, dirty, resize;
 	Rune *new, *old, *r;
 	uint q0, q1;
-	static Rune Ldelsnarf[] = { ' ', 'D', 'e', 'l', ' ',
-		'S', 'n', 'a', 'r', 'f', 0 };
+	static Rune Ldel[] = { ' ', 'D', 'e', 'l', 0 };
 	static Rune Lundo[] = { ' ', 'U', 'n', 'd', 'o', 0 };
 	static Rune Lredo[] = { ' ', 'R', 'e', 'd', 'o', 0 };
 	static Rune Lget[] = { ' ', 'G', 'e', 't', 0 };
 	static Rune Lput[] = { ' ', 'P', 'u', 't', 0 };
-	static Rune Llook[] = { ' ', 'L', 'o', 'o', 'k', ' ', 0 };
-	static Rune Lpipe[] = { ' ', '|', 0 };
+	static Rune Lrevlook[] = { ' ', 'R', 'e', 'v', ' ', 'L', 'o', 'o', 'k', ' ', 0 };	
+	static Rune Lpipe[] = {' ', '|'};
 
-	/* there are races that get us here with stuff in the tag cache, so we take extra care to sync it */
+		/* there are races that get us here with stuff in the tag cache, so we take extra care to sync it */
 	if(w->tag.ncache!=0 || w->tag.file->mod)
 		wincommit(w, &w->tag);	/* check file name; also guarantees we can modify tag contents */
 	old = runemalloc(w->tag.file->b.nc+1);
@@ -477,8 +476,8 @@ winsettag1(Window *w)
 	i = 0;
 	runemove(new+i, w->body.file->name, w->body.file->nname);
 	i += w->body.file->nname;
-	runemove(new+i, Ldelsnarf, 10);
-	i += 10;
+	runemove(new+i, Ldel, 4);
+	i += 4;
 	if(w->filemenu){
 		if(w->body.needundo || w->body.file->delta.nc>0 || w->body.ncache){
 			runemove(new+i, Lundo, 5);
@@ -506,8 +505,8 @@ winsettag1(Window *w)
 	else{
 		k = w->tag.file->b.nc;
 		if(w->body.file->seq == 0){
-			runemove(new+i, Llook, 6);
-			i += 6;
+			runemove(new+i, Lrevlook, 10);
+			i += 10;
 		}
 	}
 	new[i] = 0;

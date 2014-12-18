@@ -25,4 +25,4 @@ local!(.*)		alias		\1@swtch.com
 ([^@]+)@([^@]+)		alias		\2!\1
 
 # send all mail to the gateway or mail server, $smtp,  for delivery
-([^!]*)!(.*) 		| 		"$PLAN9/mail/lib/qmail '\s' 'YOUR.MAIL.GATEWAY'" "'\2@\1'"
+([^!]*)!(.*) 		| 		"$PLAN9/mail/lib/qmail '\s' 'tcp!localhost!12345'" "'\2@\1'"

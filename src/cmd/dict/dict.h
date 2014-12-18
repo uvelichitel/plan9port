@@ -5,7 +5,7 @@ enum {	NONE=0xe800,	/* Emit nothing */
 	SPCS,		/* Start of special character name */
 	PAR,		/* Newline, indent */
 	LIGS,		/* Start of ligature codes */
-
+	
 /* need to keep in sync with utils.c:/ligtab */
 	LACU=LIGS,	/* Acute (´) ligatures */
 	LGRV,		/* Grave (ˋ) ligatures */
@@ -25,7 +25,7 @@ enum {	NONE=0xe800,	/* Emit nothing */
 	LLEN,		/* Lenis (ʼ) ligatures */
 	LBRB,		/* Breve below (̮) ligatures */
 	LIGE,		/* End of ligature codes */
-
+	
 /* need to keep in sync with utils.c:/multitab */
 	MULTI,		/* Start of multi-rune codes */
 	MAAS=MULTI,	/* ʽα */
@@ -155,6 +155,9 @@ void	thesprintkey(void);
 long	worldnextoff(long);
 void	worldprintentry(Entry, int);
 void	worldprintkey(void);
+long	dictdnextoff(long);
+void	dictdprintentry(Entry, int);
+void	dictdprintkey(void);
 
 extern Biobuf	*bdict;
 extern Biobuf	*bout;

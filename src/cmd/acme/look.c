@@ -213,7 +213,6 @@ look3(Text *t, uint q0, uint q1, int external)
 			winunlock(ct->w);
 		free(r);
 	}
-
    Return:
 	free(e.name);
 	free(e.bname);
@@ -354,7 +353,8 @@ search(Text *ct, Rune *r, uint n)
 		/* this runeeq is fishy but the null at b[nb] makes it safe */
 		if(runeeq(b, n, r, n)==TRUE){
 			if(ct->w){
-				textshow(ct, q, q+n, 1);
+				textsetselect(ct, q, q+n);
+				textshow(ct, q+n, q+n, FALSE);
 				winsettag(ct->w);
 			}else{
 				ct->q0 = q;
@@ -370,6 +370,74 @@ search(Text *ct, Rune *r, uint n)
 		if(around && q>=ct->q1)
 			break;
 	}
+	fbuffree(s);
+	return FALSE;
+}
+
+int
+rsearch(Text *ct, Rune *r, uint n)
+{
+	uint q, nb, maxn, qq;
+	int around;
+	Rune *s, *b, *c;
+
+	if(n==0 || n>ct->file->b.nc)
+		return FALSE;
+	if(2*n > RBUFSIZE){
+		warning(nil, "string too long\n");
+		return FALSE;
+	}
+	maxn = max(2*n, RBUFSIZE);
+	s = fbufalloc();
+	b = s;
+	nb = 0;
+	b[nb] = 0;
+	around = 0;
+	if(ct->file->b.nc-ct->q0 < n || ct->q0 < n)
+		qq = ct->file->b.nc - n;
+	else
+		qq = ct->q0 - n;
+	q = qq;
+	for(;;){
+		/* reload buffer*/
+		if(nb == 0 ){
+			if(around){
+				if(q == qq)
+					break;
+				nb = q + n - qq;
+			}else{
+				if(q == 0){
+					around = TRUE;
+					q = ct->file->b.nc - n;
+				}
+				nb = q+n;
+			}	
+			if(nb >= maxn)
+				nb = maxn - 1;
+			q = q+n-nb;
+			bufread(&ct->file->b, q, s, nb);
+			b = s;
+			nb = nb - n;
+		}else
+			--nb;
+		/*compare*/
+		if(b[nb] == r[0]){
+			c = &b[nb];
+			if(runeeq(c, n, r, n)==TRUE){
+				if(ct->w){
+					textshow(ct, q+nb, q+nb+n, TRUE);
+					winsettag(ct->w);
+				}else{
+					ct->q0 = q+nb;
+					ct->q1 = q+nb+n;
+				}
+			seltext = ct;
+			fbuffree(s);
+			return TRUE;
+			}
+		}
+	}
+
 	fbuffree(s);
 	return FALSE;
 }

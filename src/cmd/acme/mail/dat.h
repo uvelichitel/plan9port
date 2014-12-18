@@ -76,6 +76,10 @@ struct Message
 	char		*disposition;
 	char		*filename;
 	char		*digest;
+	/* header info for replies*/
+	char	*messageid;
+	char	*inreplyto;
+	uchar	talklevel;
 
 	Message	*next;	/* next in this mailbox */
 	Message	*prev;	/* prev in this mailbox */
@@ -130,6 +134,8 @@ extern	void		delreply(Message*);
 extern	int		mesgadd(Message*, char*, Dir*, char*);
 extern	void		mesgmenu(Window*, Message*);
 extern	void		mesgmenunew(Window*, Message*);
+extern	void		mesgmenutalk(Window *w, Message *mbox);
+extern	void		talkup(Message *mbox);
 extern	int		mesgopen(Message*, char*, char*, Message*, int, char*);
 extern	void		mesgctl(void*);
 extern	void		mesgsend(Message*);
@@ -163,6 +169,7 @@ extern	int		fsprint(CFid*, char*, ...);
 extern	Window	*wbox;
 extern	Message	mbox;
 extern	Message	replies;
+extern	Message	*lasttalk;
 extern	char		*fsname;
 extern	CFid		*plumbsendfd;
 extern	CFid		*plumbseemailfd;
@@ -172,9 +179,11 @@ extern	char		*mailboxdir;
 extern	char		*mboxname;
 extern	char		*user;
 extern	char		*srvname;
+extern	char		*lastname;
 extern	char		deleted[];
 extern	int		wctlfd;
 extern	int		shortmenu;
+extern	int		talked;
 
 extern	CFsys	*mailfs;
 extern	CFsys	*acmefs;

@@ -140,6 +140,12 @@ loadinfo(Message *m, char *dir)
 		}else if(strcmp(s, "sender") == 0){
 			free(m->sender);
 			m->sender = mkaddrs(t, nil);
+		}else if(strcmp(s, "inreplyto") == 0){
+			free(m->inreplyto);
+			m->inreplyto = estrdup(t);
+		}else if(strcmp(s, "messageid") == 0){
+			free(m->messageid);
+			m->messageid = estrdup(t);
 		}else if(strcmp(s, "to") == 0){
 			free(m->to);
 			m->to = mkaddrs(t, nil);
@@ -232,6 +238,64 @@ loaddir(char *name, int *np)
 }
 
 void
+talkup(Message *mbox)
+{
+	Message *orig, *qh, *qt, *m;
+	char *inreply;
+		
+	m = mbox->tail;
+	lastname = m->name;
+	lasttalk = m;
+	if(m->inreplyto && m->prev){
+		orig = m;
+		inreply = estrdup(m->inreplyto);
+		while(orig->prev){
+			orig = orig->prev;
+			if(strcmp(m->inreplyto, orig->messageid) == 0){
+				lastname = m->name;
+					/* shift talk */
+				qt = orig;
+				while(qt->talklevel)
+					qt = qt->next;
+				m->talklevel = orig->talklevel + 1;
+				while(orig->prev && (orig->prev->talklevel >= m->talklevel))
+					orig = orig->prev;
+					/* insert curent in talk */
+				mbox->tail = m->prev;
+				m->prev->next = nil;
+				m->next = orig;
+				m->prev = orig->prev;					
+				if(orig->prev)
+					orig->prev->next = m;
+				orig->prev = m;
+				qh = m;
+				while(qh->prev && qh->prev->talklevel)
+					qh = qh->prev;
+					/* cut talk */
+				if(qt->next){
+					if(qh->prev)
+						qh->prev->next = qt->next;
+					else
+						mbox->head = qt->next;
+					qt->next->prev = qh->prev;
+					/* glue */
+					qh->prev = mbox->tail;
+					mbox->tail->next = qh;
+				}else{
+					if(!qh->prev)
+						mbox->head = qh;
+				}
+				qt->next = nil;
+				lasttalk =qh;
+				mbox->tail = qt;
+				break;
+			}
+		}
+		free(inreply);
+	}
+}
+
+void
 readmbox(Message *mbox, char *dir, char *subdir)
 {
 	char *name;
@@ -262,6 +326,8 @@ mesgadd(Message *mbox, char *dir, Dir *d, char *digest)
 	m = emalloc(sizeof(Message));
 	m->name = estrstrdup(d->name, "/");
 	m->next = nil;
+	m->inreplyto = nil;
+	m->talklevel = 0;
 	m->prev = mbox->tail;
 	m->level= mbox->level+1;
 	m->recursed = 0;
@@ -284,6 +350,8 @@ mesgadd(Message *mbox, char *dir, Dir *d, char *digest)
 		m->recursed = 1;
 		readmbox(m, dir, m->name); 
 	}
+	if(talked && !mbox->level)
+		talkup(mbox);
 	return 1;
 }
 
@@ -374,15 +442,25 @@ char*
 info(Message *m, int ind, int ogf)
 {
 	char *i;
-	int j, len, lens;
-	char *p;
+	int j, len, lens, n;
+	char *p, *sp;
 	char fmt[80], s[80];
 
 	if (ogf)
 		p=m->to;
 	else
 		p=m->fromcolon;
-
+	sp = strchr(p, '<');
+	if(sp)
+		*sp = '\0';
+	i = estrdup("");
+	if(talked){
+		n = m->talklevel;
+		while(n){
+		i = eappend(i, "␣", nil);
+		--n;
+		}
+	}
 	if(ind==0 && shortmenu){
 		len = 30;
 		lens = 30;
@@ -397,13 +475,10 @@ info(Message *m, int ind, int ogf)
 			snprint(fmt, sizeof fmt, " %%-%d.%ds  %%-%d.%ds", len, len, lens, lens);
 			snprint(s, sizeof s, fmt, p, m->subject);
 		}
-		i = estrdup(s);
-
+		i = eappend(i, s, nil);
 		return i;
 	} 
-
-	i = estrdup("");
-	i = eappend(i, "\t", p);
+	i = eappend(i, " ", p);
 	i = egrow(i, "\t", stripdate(m->date));
 	if(ind == 0){
 		if(strcmp(m->type, "text")!=0 && strncmp(m->type, "text/", 5)!=0 && 
@@ -420,6 +495,28 @@ info(Message *m, int ind, int ogf)
 	return i;
 }
 
+char*
+name2regexp(char *prefix, char *s)
+{
+	char *buf, *p, *q;
+
+	buf = emalloc(strlen(prefix)+2*strlen(s)+50);	/* leave room to append more */
+	p = buf;
+	*p++ = '0';
+	*p++ = '/';
+	*p++ = '^';
+	strcpy(p, prefix);
+	p += strlen(prefix);
+	for(q=s; *q!='\0'; q++){
+		if(strchr(regexchars, *q) != nil)
+			*p++ = '\\';
+		*p++ = *q;
+	}
+	*p++ = '/';
+	*p = '\0';
+	return buf;
+}
+
 void
 mesgmenu0(Window *w, Message *mbox, char *realdir, char *dir, int ind, CFid *fd, int onlyone, int dotail)
 {
@@ -430,7 +527,7 @@ mesgmenu0(Window *w, Message *mbox, char *realdir, char *dir, int ind, CFid *fd,
 
 	if(strstr(realdir, "outgoing") != nil)
 		ogf=1;
-
+		
 	/* show mail box in reverse order, pieces in forward order */
 	if(ind > 0)
 		m = mbox->head;
@@ -486,26 +583,42 @@ mesgmenunew(Window *w, Message *mbox)
 	w->data = nil;
 }
 
-char*
-name2regexp(char *prefix, char *s)
-{
-	char *buf, *p, *q;
 
-	buf = emalloc(strlen(prefix)+2*strlen(s)+50);	/* leave room to append more */
-	p = buf;
-	*p++ = '0';
-	*p++ = '/';
-	*p++ = '^';
-	strcpy(p, prefix);
-	p += strlen(prefix);
-	for(q=s; *q!='\0'; q++){
-		if(strchr(regexchars, *q) != nil)
-			*p++ = '\\';
-		*p++ = *q;
+/* one new message has arrived, as reply */
+void
+mesgmenutalk(Window *w, Message *mbox)
+{
+	Biobuf *b;
+	char *tmp;
+	Message *m;
+	int n;
+
+	winselect(w, "0", 0);
+	w->data = winopenfile(w, "data");
+	b = emalloc(sizeof(Biobuf));
+	for(m = lasttalk; m!=nil; m=m->next){
+		/* check for duplicates */
+		tmp = name2regexp("", m->name);
+		if (winsetaddr(w, tmp, 1) && winsetaddr(w, ".,./.*\\n(\t.*\\n)*/", 1)){
+			fswrite(w->data, "", 0);
+			winsetaddr(w, "0", 0);
+		}
+		tmp = info(m, 0, 0);
+		fsprint(w->data, "%s%s\n", m->name, tmp);
 	}
-	*p++ = '/';
-	*p = '\0';
-	return buf;
+	if(!mbox->dirty)
+		winclean(w);
+	free(b);
+	tmp = name2regexp("", lastname);
+	n = strlen(tmp);
+	tmp[n-1] = '\0';
+	tmp = strcat(tmp, ".*\\n((\t.*\\n)*\t.*)?");
+	winselect(w, tmp, 1);
+	free(tmp);
+	fsclose(w->addr);
+	fsclose(w->data);
+	w->addr = nil;
+	w->data = nil;
 }
 
 void
@@ -607,6 +720,9 @@ mesgfreeparts(Message *m)
 	free(m->disposition);
 	free(m->filename);
 	free(m->digest);
+	free(m->messageid);
+	if(m->inreplyto)
+		free(m->inreplyto);
 }
 
 void
@@ -630,6 +746,8 @@ mesgdel(Message *mbox, Message *m)
 		m->prev->next = m->next;
 	else
 		mbox->head = m->next;
+	if(!m->talklevel && m->prev && m->prev->talklevel)
+		m->prev->talklevel = 0;
 
 	mesgfreeparts(m);
 }
@@ -1290,11 +1408,12 @@ plumb(Message *m, char *dir)
 int
 mesgopen(Message *mbox, char *dir, char *s, Message *mesg, int plumbed, char *digest)
 {
-	char *t, *u, *v;
+	char *t, *u, *v, *messageid0;
 	Message *m;
 	char *direlem[10];
 	int i, ndirelem, reuse;
-
+	
+	messageid0 = nil;
 	/* find white-space-delimited first word */
 	for(t=s; *t!='\0' && !isspace(*t); t++)
 		;
@@ -1342,7 +1461,7 @@ mesgopen(Message *mbox, char *dir, char *s, Message *mesg, int plumbed, char *di
 		threadcreate(mesgctl, m, STACK);
 		winopenbody(m->w, OWRITE);
 		mesgload(m, dir, m->name, m->w);
-		winclosebody(m->w);
+		winclosebody(m->w);		
 		/* sleep(100); */
 		winclean(m->w);
 		m->opened = 1;

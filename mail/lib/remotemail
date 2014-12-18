@@ -11,4 +11,4 @@ case *.*
 case *
 	fd=YOURDOMAIN.DOM
 }
-exec upas/smtp -h $fd $addr $sender $* 
+exec upas/smtp -aih gmail.com .gmail.com $addr Uvelichitel $* 

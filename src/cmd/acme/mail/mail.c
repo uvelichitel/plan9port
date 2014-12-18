@@ -14,6 +14,8 @@ char *fsname;						/* filesystem for mailboxdir/mboxname is at maildir/fsname */
 char	*user;
 char	*outgoing;
 char *srvname;
+char *lastname;
+Message *lasttalk;
 
 Window	*wbox;
 Message	mbox;
@@ -36,6 +38,7 @@ void		plumbshowthread(void*);
 void		plumbsendthread(void*);
 
 int			shortmenu;
+int			talked;
 
 CFsys *mailfs;
 CFsys *acmefs;
@@ -43,7 +46,7 @@ CFsys *acmefs;
 void
 usage(void)
 {
-	fprint(2, "usage: Mail [-sS] [-n srvname] [-o outgoing] [mailboxname [directoryname]]\n");
+	fprint(2, "usage: Mail [-sSt] [-n srvname] [-o outgoing] [mailboxname [directoryname]]\n");
 	threadexitsall("usage");
 }
 
@@ -92,6 +95,7 @@ threadmain(int argc, char *argv[])
 		fprint(2, "warning: open plumb/showmail: %r\n");
 
 	shortmenu = 0;
+	talked = 0;
 	srvname = "mail";
 	ARGBEGIN{
 	case 's':
@@ -99,6 +103,9 @@ threadmain(int argc, char *argv[])
 		break;
 	case 'S':
 		shortmenu = 2;
+		break;
+	case 't':
+		talked = 1;
 		break;
 	case 'o':
 		outgoing = EARGF(usage());
@@ -199,7 +206,7 @@ threadmain(int argc, char *argv[])
 
 	wbox = newwindow();
 	winname(wbox, mbox.name);
-	wintagwrite(wbox, "Put Mail Delmesg ", 3+1+4+1+7+1);
+	wintagwrite(wbox, "Put Mail Delmesg Search ", 3+1+4+1+7+1+6+1);
 	threadcreate(mainctl, wbox, STACK);
 
 	fmtstrinit(&fmt);
@@ -297,8 +304,12 @@ newmesg(char *name, char *digest)
 	d = fsdirstat(mailfs, name);
 	if(d == nil)
 		return;
-	if(mesgadd(&mbox, mbox.name, d, digest))
-		mesgmenunew(wbox, &mbox);
+	if(mesgadd(&mbox, mbox.name, d, digest)){
+		if(talked)
+			mesgmenutalk(wbox, &mbox);
+		else
+			mesgmenunew(wbox, &mbox);
+	}
 	free(d);
 }
 

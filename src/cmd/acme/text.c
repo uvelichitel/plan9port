@@ -1127,8 +1127,9 @@ textshow(Text *t, uint q0, uint q1, int doselect)
 		if(!(q0>t->org && q<t->org))
 			textsetorigin(t, q, TRUE);
 		while(q0 > t->org+t->fr.nchars)
-			textsetorigin(t, t->org+1, FALSE);
+		textsetorigin(t, t->org+1, FALSE);
 	}
+	
 }
 
 static
