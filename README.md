@@ -1,4 +1,23 @@
+This is my branch of canonical p9p repo. I try to keep all
+updates from original to be synced.
+
+Diffs
+
+-Acme Mail threaded by conversation.
+
+-On darvin gestures implement mouse chords.
+
+-Acme has command Rev as opposite of Look. Executing Look after Rev effectively select text between two marks.
+
+-Command Edit without args after all selections place tik in last insert position.
+
+-Tik incorrect positioning after executing Load fixed
+
+-Few cosmetic changes due to my own tastes
+
+
 This is a port of many Plan 9 libraries and programs to Unix.
+------------
 
 Installation
 ------------
