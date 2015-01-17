@@ -457,7 +457,7 @@ info(Message *m, int ind, int ogf)
 	if(talked){
 		n = m->talklevel;
 		while(n){
-		i = eappend(i, "␣", nil);
+		i = eappend(i, "#", nil);
 		--n;
 		}
 	}
