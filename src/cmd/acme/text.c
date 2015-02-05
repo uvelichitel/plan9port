@@ -672,13 +672,19 @@ texttype(Text *t, Rune r)
 	switch(r){
 	case Kleft:
 		typecommit(t);
-		if(t->q0 > 0)
+		if ((t->q0 == t->q1)&&(t->q0 > 0)){
 			textshow(t, t->q0-1, t->q0-1, TRUE);
+		}else{
+			textshow(t, t->q0, t->q0, TRUE);
+		}
 		return;
 	case Kright:
 		typecommit(t);
-		if(t->q1 < t->file->b.nc)
+		if ((t->q0 == t->q1)&&(t->q1 < t->file->b.nc)){
 			textshow(t, t->q1+1, t->q1+1, TRUE);
+		}else{
+			textshow(t, t->q1, t->q1, TRUE);
+		}
 		return;
 	case Kdown:
 		if(t->what == Tag)
