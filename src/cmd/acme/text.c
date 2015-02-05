@@ -686,12 +686,35 @@ texttype(Text *t, Rune r)
 			textshow(t, t->q1, t->q1, TRUE);
 		}
 		return;
-	case Kdown:	/* Grow selection */
+	case Kcmd+'=':	/* Grow right selection */
 		if (t->q1 < t->file->b.nc){
 			t->q1 = t->q1 + 1;
 			textshow(t, t->q0, t->q1, TRUE);
 		}
 		return;
+	case Kcmd+'9':	/* Grow left selection */
+		if (t->q0 > 0){
+			t->q0 = t->q0 - 1;
+			textshow(t, t->q0, t->q1, TRUE);
+		}
+		return;
+	case Kcmd+'-':	/* Shrink right selection */
+		if (t->q1 > t->q0){
+			t->q1 = t->q1 - 1;
+			textshow(t, t->q0, t->q1, TRUE);
+		}
+		return;
+	case Kcmd+'0':	/* Shrink left selection */
+		if (t->q1 > t->q0){
+			t->q0 = t->q0 + 1;
+			textshow(t, t->q0, t->q1, TRUE);
+		}
+		return;
+	case Kdown:
+		if(t->what == Tag)
+			goto Tagdown;
+		n = t->fr.maxlines/3;
+		goto case_Down;
 	case Kscrollonedown:
 		if(t->what == Tag)
 			goto Tagdown;
@@ -705,12 +728,11 @@ texttype(Text *t, Rune r)
 		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+n*t->fr.font->height));
 		textsetorigin(t, q0, TRUE);
 		return;
-	case Kup:	/* Shrink selection */
-		if (t->q1 > t->q0){
-			t->q1 = t->q1 - 1;
-			textshow(t, t->q0, t->q1, TRUE);
-		}
-		return;
+	case Kup:
+		if(t->what == Tag)
+			goto Tagup;
+		n = t->fr.maxlines/3;
+		goto case_Up;
 	case Kscrolloneup:
 		if(t->what == Tag)
 			goto Tagup;
