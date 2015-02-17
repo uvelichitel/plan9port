@@ -3,13 +3,15 @@
 # run B but then wait for the file to change.
 # great to set as $EDITOR.
 # the notion of a file changing is a little weak.
-
-stat=`ls -l $1`
+name=${1%\#[0-9]*}
+name=${name%\:[0-9]*}
+name=${name%\+[0-9]*}
+stat=`ls -l $name`
 B "$@"
 echo editing "$@"
 while sleep 1
 do
-	nstat=`ls -l $1`
+	nstat=`ls -l $name`
 	if [ "x$stat" != "x$nstat" ]
 	then
 		exit
