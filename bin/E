@@ -1,11 +1,9 @@
 #!/bin/sh
 
-# run B but then wait for the file to change.
+# run B but then  wait for the file to change.
 # great to set as $EDITOR.
 # the notion of a file changing is a little weak.
-name=${1%\#[0-9]*}
-name=${name%\:[0-9]*}
-name=${name%\+[0-9]*}
+name="`echo $1 | sed 's/[:#][0-9]*[:#]*[0-9]*$//'`"
 stat=`ls -l $name`
 B "$@"
 echo editing "$@"
