@@ -11,9 +11,9 @@ Diffs
 
 -Command Edit without args after all selections place tik in last insert position.
 
--Tik incorrect positioning after executing Load fixed
+-Tik incorrect positioning after executing Load fixed.
 
--Few cosmetic changes due to my own tastes
+-Few cosmetic changes due to my own tastes.
 
 
 This is a port of many Plan 9 libraries and programs to Unix.
